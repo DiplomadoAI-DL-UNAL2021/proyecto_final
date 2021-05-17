@@ -95,7 +95,7 @@ for path in list_paths:
 # Defina la imagen de entrada 
 img_train = '20210309T152639_20210309T152638_T18NWL.tif'
 img_file = os.path.join(path_sources, img_train) 
-aoi_file = os.path.join(path_shapes, 'aoi.gpkg') # Formato geográfico
+aoi_file = os.path.join(path_shapes, 'aoi.geojson') # Formato geográfico
 manzana_file = os.path.join(path_shapes, 'manzana.geojson') # Formato geográfico
 img_name = img_train.split('_')[0] 
 
