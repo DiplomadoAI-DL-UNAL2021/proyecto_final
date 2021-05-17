@@ -75,14 +75,14 @@ La estructura de directorios es el siguiente.
   +-- figures: imágenes y figuras 
 """
 # %%
-path_project = "./tunjo/"
+path_project = "./hayuelos/"
 path_sources = os.path.join(path_project, "sources")
 path_shapes = os.path.join(path_project, "shapes")
 path_results = os.path.join(path_project, "results")
 path_logs = os.path.join(path_project, "logs")
 path_figures = os.path.join(path_project, "figures")
 path_models = os.path.join(path_project, "models")
-list_paths = [path_results, path_figures, path_models]
+list_paths = [path_results, path_figures, path_models, path_logs]
 
 # Crear directorios temporales
 
@@ -95,7 +95,7 @@ for path in list_paths:
 # Defina la imagen de entrada 
 img_train = '20210309T152639_20210309T152638_T18NWL.tif'
 img_file = os.path.join(path_sources, img_train) 
-aoi_file = os.path.join(path_shapes, 'aoi.geojson') # Formato geográfico
+aoi_file = os.path.join(path_shapes, 'aoi.gpkg') # Formato geográfico
 manzana_file = os.path.join(path_shapes, 'manzana.geojson') # Formato geográfico
 img_name = img_train.split('_')[0] 
 
@@ -203,17 +203,6 @@ print('Tamaño de entrenamiento: ', df_shape.shape)
 print(df[bandsout].describe().T)
 
 # %%
-# Graficar las curvas espectrales de las muestras
-
-fig, ax = plt.subplots(figsize=(9, 9))
-df_shape.groupby('id').agg('mean')[bandsout].T.plot(cmap='RdYlGn')
-plt.title('Curvas espectrales de las muestras')
-plt.xlabel('Bandas espectrales')
-plt.ylabel('Reflectancia')
-plt.tight_layout()
-fig.show()
-
-# %%
 fig, axes = plt.subplots(1,2, figsize=(10,4), sharey=True, sharex=True)
 plt.suptitle("Áreas de entrenamiento")
 axes[0].set_title('No vegetación')
@@ -318,7 +307,7 @@ classifier_keras = KerasClassifier(
     layer2_units=32,
     dropout_rate=0.025,
     l2_regularization=0,
-    epochs=25, 
+    epochs=50, 
     shuffle=True, 
     validation_split=0.2,
     callbacks=[call_save_model, call_tensorboard, call_csv, call_remote],
@@ -621,7 +610,7 @@ for idx in range(0, len(list_results)):
     plt.tight_layout()
     plt.savefig(os.path.join(path_figures, f'rgb_{imgname}-{timename}.png'))
         
-    plt.show()
+    plt.close()
 
 # %%
 # Generación de la animación con la secuencia imágenes con la clasificación  Keras
