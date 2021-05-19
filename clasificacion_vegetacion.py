@@ -19,7 +19,7 @@
 # Trabajo final del Diplomado en AI & DL Universidad Nacional de Colombia
 ## Clasificación de cambios de coberturas vegetales en imágenes de satélite Sentinel-2 en los humedales de Bogotá 
 ### Fecha: Mayo de 2021
-### Autores: Samuel Mesa, Wilgen Correa
+### Autores: Samuel Mesa <samuelmesa@linuxmail.org>, Wilgen Correa
 """
 # %% [markdown]
 # ### Cargar librerias
@@ -570,9 +570,9 @@ list_sources = list()
 list_results = list()
 list_titles = list()
 
-for img in glob.glob(os.path.join(path_sources, '*.tif')):
+for img in glob.glob(os.path.join(path_sources, '*.tif')):    
     imgname = os.path.basename(img)
-    namepart = imgname.split('_')[0]
+    namepart = imgname.split('T')[0]
     imgclass = os.path.join(path_results, f"class_{namepart}-{timename}.tif")
     imgprob = os.path.join(path_results, f"prob_{namepart}-{timename}.tif")
     list_sources.append(img)
@@ -622,3 +622,53 @@ with imageio.get_writer(movie_classkeras, mode='I',  duration=0.8) as writer:
         plt.tight_layout()
         writer.append_data(image)    
 
+# %%
+
+reader_moviekeras = imageio.get_reader(movie_classkeras)
+writer_movie = imageio.get_writer(movie_classkeras.replace('gif', 'mp4'), fps=1)
+
+for frame in reader_moviekeras:
+    writer_movie.append_data(frame)
+writer_movie.close()
+
+# %% [markdown]nuevamente pensnado 
+"""
+# Análiss de cambios de coberturas vegetales multitemporal
+"""
+# %%
+
+stack_classkeras = Raster(sorted(list_results))
+[stack_classkeras.rename({name: sorted(list_titles)[idx]}, in_place=True) for idx, name in enumerate(stack_classkeras.names)]
+
+# %% [markdown]
+"""
+Se realiza la combinación de secuencias de tres imágenes (t1,t2,t3). Es decir, la alerta lo genera en las últimas tres imágenes. También se construye un histótico global
+
+| ID | Estado en el tiempo           | t1 (Red) | t2 (Green) | t3 (Blue) | Color    |
+|----|-------------------------------|----------|------------|-----------|----------|
+| 1  | Sin vegetación                | 0        | 0          | 0         | Negro    |
+| 2  | Con vegetación                | 1        | 1          | 1         | Blanco   |
+| 3  | Ganó vegetacion en t1 y t2    | 0        | 1          | 1         | Cyan     |
+| 4  | Gano vegetación en t1         | 0        | 0          | 1         | Azul     |
+| 5  | Perdió vegetación en t3       | 1        | 1          | 0         | Amarillo |
+| 6  | Perdió vegetación en t2 y t3  | 1        | 0          | 0         | Rojo     |
+| 7  | Perdió vegetación en t2       | 0        | 1          | 0         | Verde    |
+| 8  | Perdió en t2 y ganó en t3     | 1        | 0          | 1         | Violeta  |
+
+Para el global, se espera que los valores de celda más alto son los que mayor cambio
+-
+"""
+# %%
+times_seq = list(zip(stack_classkeras.names, stack_classkeras.names[1:], 
+         stack_classkeras.names[2:]))        
+
+for idx, timeseq in enumerate(times_seq):
+    if idx == 0:
+        histglobal = stack_classkeras[list(timeseq)].apply(lambda x: sum(x)).read()
+    else: 
+        histglobal = 0.9 * histglobal + 0.1 * stack_classkeras[list(timeseq)].apply(lambda x: sum(x)).read() 
+        
+    ep.plot_rgb(stack_classkeras[list(timeseq)].read(), stretch=True,
+                title='/'.join(timeseq))
+
+ep.plot_bands(histglobal, cmap='inferno', title='Cambios globales')
